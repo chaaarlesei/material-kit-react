@@ -9,30 +9,32 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
-import { _users } from 'src/_mock';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { TableNoData } from '../table-no-data';
-import { UserTableRow } from '../user-table-row';
-import { UserTableHead } from '../user-table-head';
+import { BookingTableRow } from '../booking-table-row';
+import { BookingTableHead } from '../booking-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
-import { UserTableToolbar } from '../user-table-toolbar';
-import { emptyRows, applyFilter, getComparator } from '../utils';
+import { BookingTableToolbar } from '../booking-table-toolbar';
+import { emptyRows, getComparator } from '../utils';
 
-import type { UserProps } from '../user-table-row';
+import type { BookingProps } from '../booking-table-row';
+
+// import { BookingView } from '/src/sections/booking/view';
 
 // ----------------------------------------------------------------------
 
-export function UserView() {
+export function BookingView() {
   const table = useTable();
 
   const [filterName, setFilterName] = useState('');
+  const [bookings] = useState<BookingProps[]>([]);
 
-  const dataFiltered: UserProps[] = applyFilter({
-    inputData: _users,
+  const dataFiltered: BookingProps[] = applyFilter({
+    inputData: bookings,
     comparator: getComparator(table.order, table.orderBy),
     filterName,
   });
@@ -43,19 +45,19 @@ export function UserView() {
     <DashboardContent>
       <Box display="flex" alignItems="center" mb={5}>
         <Typography variant="h4" flexGrow={1}>
-          Users
+          Bookings
         </Typography>
         <Button
           variant="contained"
           color="inherit"
           startIcon={<Iconify icon="mingcute:add-line" />}
         >
-          New user
+          New Booking
         </Button>
       </Box>
 
       <Card>
-        <UserTableToolbar
+        <BookingTableToolbar
           numSelected={table.selected.length}
           filterName={filterName}
           onFilterName={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,24 +69,26 @@ export function UserView() {
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
             <Table sx={{ minWidth: 800 }}>
-              <UserTableHead
+              <BookingTableHead
                 order={table.order}
                 orderBy={table.orderBy}
-                rowCount={_users.length}
+                rowCount={bookings.length}
                 numSelected={table.selected.length}
                 onSort={table.onSort}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
-                    _users.map((user) => user.id)
+                    bookings.map((booking) => booking.id)
                   )
                 }
                 headLabel={[
-                  { id: 'name', label: 'Name' },
-                  { id: 'company', label: 'Company' },
-                  { id: 'role', label: 'Role' },
-                  { id: 'isVerified', label: 'Verified', align: 'center' },
-                  { id: 'status', label: 'Status' },
+                  { id: 'id', label: 'ID' },
+                  { id: 'bookingId', label: 'Booking ID' },
+                  { id: 'senderName', label: 'Shipper' },
+                  { id: 'receiverName', label: 'Receiver' },
+                  { id: 'bookingDate', label: 'Booking Date' },
+                  { id: 'deliveryDate', label: 'Delivery Date' },
+                  { id: 'status', label: 'Job Status' },
                   { id: '' },
                 ]}
               />
@@ -95,7 +99,7 @@ export function UserView() {
                     table.page * table.rowsPerPage + table.rowsPerPage
                   )
                   .map((row) => (
-                    <UserTableRow
+                    <BookingTableRow
                       key={row.id}
                       row={row}
                       selected={table.selected.includes(row.id)}
@@ -105,10 +109,14 @@ export function UserView() {
 
                 <TableEmptyRows
                   height={68}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, _users.length)}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, bookings.length)}
                 />
 
-                {notFound && <TableNoData searchQuery={filterName} />}
+                {notFound ? (
+                  <TableNoData searchQuery={filterName} />
+                ) : (
+                  bookings.length === 0 && !filterName && <TableNoData searchQuery="" />
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -117,7 +125,7 @@ export function UserView() {
         <TablePagination
           component="div"
           page={table.page}
-          count={_users.length}
+          count={bookings.length}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
           rowsPerPageOptions={[5, 10, 25]}
@@ -126,6 +134,37 @@ export function UserView() {
       </Card>
     </DashboardContent>
   );
+}
+
+// Helper function to apply filters
+function applyFilter({
+  inputData,
+  comparator,
+  filterName,
+}: {
+  inputData: BookingProps[];
+  comparator: (a: any, b: any) => number;
+  filterName: string;
+}) {
+  if (!inputData.length) return [];
+  
+  const stabilizedThis = inputData.map((el, index) => [el, index] as const);
+
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+
+  inputData = stabilizedThis.map((el) => el[0]);
+
+  if (filterName) {
+    inputData = inputData.filter(
+      (booking) => booking.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
+    );
+  }
+
+  return inputData;
 }
 
 // ----------------------------------------------------------------------
@@ -169,7 +208,7 @@ export function useTable() {
     setPage(0);
   }, []);
 
-  const onChangePage = useCallback((event: unknown, newPage: number) => {
+  const onChangePage = useCallback((_: unknown, newPage: number) => {
     setPage(newPage);
   }, []);
 

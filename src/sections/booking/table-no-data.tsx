@@ -21,9 +21,7 @@ export function TableNoData({ searchQuery, ...other }: TableNoDataProps) {
           </Typography>
 
           <Typography variant="body2">
-            No results found for &nbsp;
-            <strong>&quot;{searchQuery}&quot;</strong>.
-            <br /> Try checking for typos or using complete words.
+            No data available right now
           </Typography>
         </Box>
       </TableCell>
